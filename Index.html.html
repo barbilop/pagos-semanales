@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pagos Semanales · Pos & Asociados</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F7F3EE;
+    --ink: #1A1714;
+    --warm: #8B6F4E;
+    --gold: #C9963A;
+    --sage: #4A6741;
+    --rust: #B84C2B;
+    --mist: #E8E2DA;
+    --card: #FFFFFF;
+    --shadow: 0 2px 16px rgba(26,23,20,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--cream); color: var(--ink); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+  .header { background: var(--ink); color: var(--cream); padding: 1.25rem 1.25rem 1rem; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 1.1rem; letter-spacing: 0.01em; }
+  .logo span { color: var(--gold); }
+  .fecha { font-size: 11px; color: rgba(247,243,238,0.5); margin-top: 2px; text-transform: capitalize; }
+  .mode-toggle { display: flex; background: rgba(255,255,255,0.08); border-radius: 20px; padding: 3px; gap: 2px; }
+  .mode-btn { padding: 5px 12px; border: none; background: transparent; color: rgba(247,243,238,0.6); font-size: 12px; border-radius: 16px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; transition: all 0.2s; }
+  .mode-btn.active { background: var(--gold); color: var(--ink); }
+  .summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 1rem 1.25rem; background: var(--ink); }
+  .sum-card { background: rgba(255,255,255,0.06); border-radius: 10px; padding: 10px; text-align: center; }
+  .sum-num { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--cream); }
+  .sum-num.green { color: #8fca6e; }
+  .sum-num.amber { color: var(--gold); }
+  .sum-label { font-size: 10px; color: rgba(247,243,238,0.45); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .main { padding: 1rem 1.25rem 6rem; }
+  .cat-block { margin-bottom: 1.25rem; }
+  .cat-title { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--warm); margin-bottom: 8px; padding-left: 2px; display: flex; align-items: center; gap: 8px; }
+  .cat-title::after { content: ''; flex: 1; height: 1px; background: var(--mist); }
+  .pago { background: var(--card); border-radius: 12px; padding: 13px 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow); transition: opacity 0.3s; position: relative; overflow: hidden; }
+  .pago::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--gold); border-radius: 3px 0 0 3px; transition: background 0.3s; }
+  .pago.pagado { opacity: 0.5; }
+  .pago.pagado::before { background: var(--sage); }
+  .pago-info { flex: 1; min-width: 0; }
+  .pago-nombre { font-size: 14px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pago.pagado .pago-nombre { text-decoration: line-through; color: #999; }
+  .pago-sub { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+  .pago-monto { font-size: 13px; color: var(--warm); font-weight: 500; }
+  .pago-nota { font-size: 11px; color: #aaa; font-style: italic; }
+  .check { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--mist); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 14px; flex-shrink: 0; }
+  .check:active { transform: scale(0.88); }
+  .pago.pagado .check { background: var(--sage); border-color: var(--sage); }
+  .del-btn { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--mist); background: transparent; cursor: pointer; color: #ccc; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .form-section { background: var(--card); border-radius: 16px; padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: var(--shadow); }
+  .form-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; margin-bottom: 1rem; color: var(--ink); }
+  .field { margin-bottom: 12px; }
+  .field label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warm); display: block; margin-bottom: 5px; }
+  .field input, .field select { width: 100%; padding: 10px 12px; border: 1.5px solid var(--mist); border-radius: 10px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--ink); background: var(--cream); outline: none; }
+  .field input:focus, .field select:focus { border-color: var(--gold); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn-add { width: 100%; padding: 12px; background: var(--ink); color: var(--cream); border: none; border-radius: 10px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 4px; }
+  .btn-add:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-reset { width: 100%; padding: 11px; background: transparent; color: var(--rust); border: 1.5px solid #f0d0c8; border-radius: 10px; font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-bottom: 1.25rem; }
+  .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--cream); padding: 8px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap; z-index: 200; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .empty { text-align: center; padding: 3rem 1rem; color: #bbb; }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .empty p { font-size: 14px; }
+  .sync-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--ink); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; z-index: 150; }
+  .sync-info { font-size: 11px; color: rgba(247,243,238,0.45); }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #8fca6e; display: inline-block; margin-right: 5px; }
+  .sync-dot.syncing { background: var(--gold); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+  .btn-sync { font-size: 12px; padding: 6px 14px; background: rgba(255,255,255,0.08); color: var(--cream); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">Pos <span>&</span> Asociados</div>
+      <div class="fecha" id="fecha-hoy"></div>
+    </div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" onclick="setMode('ivan')" id="btn-ivan">Iván</button>
+      <button class="mode-btn" onclick="setMode('barbi')" id="btn-barbi">Cargar</button>
+    </div>
+  </div>
+</div>
+<div class="summary" id="summary"></div>
+<div class="main" id="main"></div>
+<div class="toast" id="toast"></div>
+<div class="sync-bar">
+  <div class="sync-info"><span class="sync-dot" id="sync-dot"></span><span id="sync-txt">Sincronizado</span></div>
+  <button class="btn-sync" onclick="cargarDatos()">↻ Actualizar</button>
+</div>
+<script>
+const SHEET_ID = '1e0Ttbq-JJcpbJMH59w3Uw2StHVKXgAdA6jNKj--ssW0';
+let pagos = [], modo = 'ivan', guardando = false;
+function fmt(n){if(n===null||n===undefined||n==='')return'❓';return'$'+Math.round(Number(n)).toLocaleString('es-AR');}
+function uid(){return Date.now()+Math.random();}
+function hoy(){return new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
+function toast(msg,tipo='ok'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+tipo;setTimeout(()=>t.className='toast',2500);}
+function setSyncing(v){document.getElementById('sync-dot').className='sync-dot'+(v?' syncing':'');document.getElementById('sync-txt').textContent=v?'Guardando...':'Sincronizado';}
+async function callClaude(prompt){
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,mcp_servers:[{type:'url',url:'https://drivemcp.googleapis.com/mcp/v1',name:'gdrive'}],messages:[{role:'user',content:prompt}]})});
+  if(!res.ok)throw new Error('API '+res.status);
+  return await res.json();
+}
+async function cargarDatos(){
+  setSyncing(true);
+  try{
+    const data=await callClaude(`Leé el contenido del archivo de Google Drive con ID "${SHEET_ID}". Devolvé SOLO un array JSON con objetos {id,nombre,monto,cat,nota,estado}. El archivo tiene columnas: Categoría,Concepto,Monto,Nota,Estado. Mapeá: Categoría→cat, Concepto→nombre, Monto→monto, Nota→nota, Estado→estado. Generá un id numérico único para cada fila. No incluyas encabezados. Solo el JSON puro, sin markdown ni explicaciones.`);
+    let jsonStr='';
+    for(const b of data.content){
+      if(b.type==='mcp_tool_result'){const t=b?.content?.[0]?.text||'';const m=t.match(/\[[\s\S]*\]/);if(m){jsonStr=m[0];break;}}
+      if(b.type==='text'){const m=b.text.match(/\[[\s\S]*\]/);if(m){jsonStr=m[0];break;}}
+    }
+    if(!jsonStr)throw new Error('Sin JSON');
+    pagos=JSON.parse(jsonStr);
+    localStorage.setItem('pagos_pos_bk',JSON.stringify(pagos));
+    setSyncing(false);render();
+  }catch(e){
+    const bk=localStorage.getItem('pagos_pos_bk');
+    if(bk){pagos=JSON.parse(bk);render();}
+    setSyncing(false);toast('Sin conexión — mostrando caché local','err');
+  }
+}
+function buildCSV(){const rows=['Categoría,Concepto,Monto,Nota,Estado'];pagos.forEach(p=>{rows.push([p.cat,p.nombre,p.monto??'',p.nota??'',p.estado].join(','));});return rows.join('\n');}
+async function guardar(){
+  if(guardando)return;guardando=true;setSyncing(true);
+  localStorage.setItem('pagos_pos_bk',JSON.stringify(pagos));
+  try{await callClaude(`Actualizá el archivo de Google Drive con ID "${SHEET_ID}" con este contenido CSV exacto:\n\n${buildCSV()}\n\nNo respondas nada, solo actualizá el archivo.`);toast('Guardado');}
+  catch(e){toast('Guardado localmente','err');}
+  guardando=false;setSyncing(false);
+}
+function render(){
+  document.getElementById('fecha-hoy').textContent=hoy();
+  renderSummary();
+  if(modo==='ivan')renderIvan();else renderBarbi();
+}
+function renderSummary(){
+  const total=pagos.reduce((s,p)=>s+(Number(p.monto)||0),0);
+  const abonado=pagos.filter(p=>p.estado==='Pagado'||p.estado==='pagado').reduce((s,p)=>s+(Number(p.monto)||0),0);
+  const nOk=pagos.filter(p=>p.estado==='Pagado'||p.estado==='pagado').length;
+  document.getElementById('summary').innerHTML=`<div class="sum-card"><div class="sum-num">${nOk}/${pagos.length}</div><div class="sum-label">Abonados</div></div><div class="sum-card"><div class="sum-num green">${fmt(abonado)}</div><div class="sum-label">Abonado</div></div><div class="sum-card"><div class="sum-num amber">${fmt(total-abonado)}</div><div class="sum-label">Pendiente</div></div>`;
+}
+function renderIvan(){
+  const main=document.getElementById('main');
+  if(!pagos.length){main.innerHTML='<div class="empty"><div class="empty-icon">📋</div><p>No hay pagos cargados esta semana.</p></div>';return;}
+  const cats=[...new Set(pagos.map(p=>p.cat))];
+  let html='';
+  cats.forEach(cat=>{
+    const items=pagos.filter(p=>p.cat===cat);
+    html+=`<div class="cat-block"><div class="cat-title">${cat}</div>`;
+    items.forEach(p=>{
+      const ok=p.estado==='Pagado'||p.estado==='pagado';
+      html+=`<div class="pago ${ok?'pagado':''}" id="pago-${p.id}"><div class="pago-info"><div class="pago-nombre">${p.nombre}</div><div class="pago-sub"><span class="pago-monto">${fmt(p.monto)}</span>${p.nota?`<span class="pago-nota">${p.nota}</span>`:''}</div></div><button class="check" onclick="toggle('${p.id}')">${ok?`<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,7 5.5,11 12,3"/></svg>`:''}</button></div>`;
+    });
+    html+='</div>';
+  });
+  main.innerHTML=html;
+}
+function renderBarbi(){
+  const main=document.getElementById('main');
+  let html=`<div class="form-section"><div class="form-title">Agregar pago</div><div class="field"><label>Concepto</label><input type="text" id="f-nombre" placeholder="Ej: Alquiler Ofi"/></div><div class="field-row"><div class="field"><label>Monto ($)</label><input type="number" id="f-monto" placeholder="358000"/></div><div class="field"><label>Categoría</label><select id="f-cat"><option>Vivienda y alquileres</option><option>Tarjetas</option><option>Acuerdos</option><option>Salud</option><option>Otros</option></select></div></div><div class="field"><label>Nota (opcional)</label><input type="text" id="f-nota" placeholder="Ej: Mar + Abr"/></div><button class="btn-add" id="btn-agregar" onclick="agregar()">Agregar pago</button></div><button class="btn-reset" onclick="resetSemana()">Limpiar lista para nueva semana</button>`;
+  if(pagos.length){
+    const cats=[...new Set(pagos.map(p=>p.cat))];
+    cats.forEach(cat=>{
+      const items=pagos.filter(p=>p.cat===cat);
+      html+=`<div class="cat-block"><div class="cat-title">${cat}</div>`;
+      items.forEach(p=>{const ok=p.estado==='Pagado'||p.estado==='pagado';html+=`<div class="pago ${ok?'pagado':''}"><div class="pago-info"><div class="pago-nombre">${p.nombre}</div><div class="pago-sub"><span class="pago-monto">${fmt(p.monto)}</span>${p.nota?`<span class="pago-nota">${p.nota}</span>`:''}</div></div><button class="del-btn" onclick="eliminar('${p.id}')">×</button></div>`;});
+      html+='</div>';
+    });
+  }
+  main.innerHTML=html;
+}
+async function toggle(id){const p=pagos.find(x=>String(x.id)===String(id));if(!p)return;p.estado=(p.estado==='Pagado'||p.estado==='pagado')?'Pendiente':'Pagado';render();await guardar();}
+async function agregar(){
+  const nombre=document.getElementById('f-nombre').value.trim();
+  const monto=document.getElementById('f-monto').value||null;
+  const cat=document.getElementById('f-cat').value;
+  const nota=document.getElementById('f-nota').value.trim();
+  if(!nombre){document.getElementById('f-nombre').focus();return;}
+  const btn=document.getElementById('btn-agregar');btn.disabled=true;btn.textContent='Guardando...';
+  pagos.push({id:uid(),nombre,monto,cat,nota,estado:'Pendiente'});
+  document.getElementById('f-nombre').value='';document.getElementById('f-monto').value='';document.getElementById('f-nota').value='';
+  render();await guardar();btn.disabled=false;btn.textContent='Agregar pago';
+}
+async function eliminar(id){pagos=pagos.filter(x=>String(x.id)!==String(id));render();await guardar();}
+async function resetSemana(){if(!confirm('¿Limpiar todos los pagos para la nueva semana?'))return;pagos=[];render();await guardar();}
+function setMode(m){modo=m;document.getElementById('btn-ivan').className='mode-btn'+(m==='ivan'?' active':'');document.getElementById('btn-barbi').className='mode-btn'+(m==='barbi'?' active':'');render();}
+cargarDatos();
+</script>
+</body>
+</html>
