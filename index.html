@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pagos Semanales · Pos & Asociados</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F7F3EE; --ink: #1A1714; --warm: #8B6F4E;
+    --gold: #C9963A; --sage: #4A6741; --rust: #B84C2B;
+    --mist: #E8E2DA; --card: #FFFFFF;
+    --shadow: 0 2px 16px rgba(26,23,20,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--cream); color: var(--ink); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+  /* PIN */
+  .pin-screen { position: fixed; inset: 0; background: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; gap: 1rem; padding: 2rem; }
+  .pin-logo { font-family: 'DM Serif Display', serif; font-size: 1.6rem; color: var(--cream); }
+  .pin-logo span { color: var(--gold); }
+  .pin-sub { font-size: 13px; color: rgba(247,243,238,0.5); text-align: center; }
+  .pin-input { width: 100%; max-width: 260px; padding: 14px 16px; border: 1.5px solid rgba(255,255,255,0.15); border-radius: 12px; background: rgba(255,255,255,0.06); color: var(--cream); font-size: 1.6rem; text-align: center; letter-spacing: 0.6rem; font-family: 'DM Sans', sans-serif; outline: none; }
+  .pin-input:focus { border-color: var(--gold); }
+  .pin-btn { width: 100%; max-width: 260px; padding: 13px; background: var(--gold); color: var(--ink); border: none; border-radius: 12px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; }
+  .pin-error { font-size: 13px; color: #e07060; min-height: 18px; }
+
+  /* HEADER */
+  .header { background: var(--ink); color: var(--cream); padding: 1.25rem 1.25rem 1rem; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 1.1rem; }
+  .logo span { color: var(--gold); }
+  .fecha { font-size: 11px; color: rgba(247,243,238,0.5); margin-top: 2px; text-transform: capitalize; }
+  .mode-toggle { display: flex; background: rgba(255,255,255,0.08); border-radius: 20px; padding: 3px; gap: 2px; }
+  .mode-btn { padding: 5px 12px; border: none; background: transparent; color: rgba(247,243,238,0.6); font-size: 12px; border-radius: 16px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; transition: all 0.2s; }
+  .mode-btn.active { background: var(--gold); color: var(--ink); }
+
+  /* SUMMARY */
+  .summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 1rem 1.25rem; background: var(--ink); }
+  .sum-card { background: rgba(255,255,255,0.06); border-radius: 10px; padding: 10px; text-align: center; }
+  .sum-num { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--cream); }
+  .sum-num.green { color: #8fca6e; } .sum-num.amber { color: var(--gold); }
+  .sum-label { font-size: 10px; color: rgba(247,243,238,0.45); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* MAIN */
+  .main { padding: 1rem 1.25rem 6rem; }
+  .cat-block { margin-bottom: 1.25rem; }
+  .cat-title { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--warm); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .cat-title::after { content: ''; flex: 1; height: 1px; background: var(--mist); }
+
+  /* CARDS */
+  .pago { background: var(--card); border-radius: 12px; padding: 13px 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow); transition: opacity 0.3s; position: relative; overflow: hidden; }
+  .pago::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--gold); border-radius: 3px 0 0 3px; transition: background 0.3s; }
+  .pago.pagado { opacity: 0.5; }
+  .pago.pagado::before { background: var(--sage); }
+  .pago-info { flex: 1; min-width: 0; }
+  .pago-nombre { font-size: 14px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pago.pagado .pago-nombre { text-decoration: line-through; color: #999; }
+  .pago-sub { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+  .pago-monto { font-size: 13px; color: var(--warm); font-weight: 500; }
+  .pago-nota { font-size: 11px; color: #aaa; font-style: italic; }
+  .check { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--mist); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+  .check:active { transform: scale(0.88); }
+  .pago.pagado .check { background: var(--sage); border-color: var(--sage); }
+  .del-btn { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--mist); background: transparent; cursor: pointer; color: #ccc; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; line-height: 1; }
+
+  /* FORM */
+  .form-section { background: var(--card); border-radius: 16px; padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: var(--shadow); }
+  .form-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; margin-bottom: 1rem; }
+  .field { margin-bottom: 12px; }
+  .field label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warm); display: block; margin-bottom: 5px; }
+  .field input, .field select { width: 100%; padding: 10px 12px; border: 1.5px solid var(--mist); border-radius: 10px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--ink); background: var(--cream); outline: none; }
+  .field input:focus, .field select:focus { border-color: var(--gold); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn-add { width: 100%; padding: 12px; background: var(--ink); color: var(--cream); border: none; border-radius: 10px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 4px; }
+  .btn-add:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-reset { width: 100%; padding: 11px; background: transparent; color: var(--rust); border: 1.5px solid #f0d0c8; border-radius: 10px; font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-bottom: 1.25rem; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--cream); padding: 8px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap; z-index: 200; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 3rem 1rem; color: #bbb; }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .empty p { font-size: 14px; }
+
+  /* SYNC BAR */
+  .sync-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--ink); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; z-index: 150; }
+  .sync-info { font-size: 11px; color: rgba(247,243,238,0.45); display: flex; align-items: center; gap: 6px; }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #8fca6e; flex-shrink: 0; }
+  .sync-dot.syncing { background: var(--gold); animation: pulse 1s infinite; }
+  .sync-dot.err { background: #e07060; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+  .sync-user { font-size: 11px; color: rgba(247,243,238,0.35); }
+</style>
+</head>
+<body>
+
+<!-- PIN SCREEN -->
+<div class="pin-screen" id="pin-screen">
+  <div class="pin-logo">Pos <span>&</span> Asociados</div>
+  <div class="pin-sub">Ingresá tu PIN para continuar</div>
+  <input class="pin-input" type="password" inputmode="numeric" maxlength="4" id="pin-input" placeholder="••••"/>
+  <button class="pin-btn" onclick="checkPin()">Ingresar</button>
+  <div class="pin-error" id="pin-error"></div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="logo">Pos <span>&</span> Asociados</div>
+        <div class="fecha" id="fecha-hoy"></div>
+      </div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" onclick="setMode('ivan')" id="btn-ivan">Iván</button>
+        <button class="mode-btn" onclick="setMode('barbi')" id="btn-barbi" style="display:none;">Cargar</button>
+      </div>
+    </div>
+  </div>
+  <div class="summary" id="summary"></div>
+  <div class="main" id="main"></div>
+  <div class="toast" id="toast"></div>
+  <div class="sync-bar">
+    <div class="sync-info">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-txt">Conectando...</span>
+    </div>
+    <span class="sync-user" id="sync-user"></span>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, update, set, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ── Config Firebase ───────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyC3AhJK4tuuD7NPEouw-nMIOg4zjjnN83Q",
+  authDomain: "pagos-pos.firebaseapp.com",
+  databaseURL: "https://pagos-pos-default-rtdb.firebaseio.com",
+  projectId: "pagos-pos",
+  storageBucket: "pagos-pos.firebasestorage.app",
+  messagingSenderId: "915524682419",
+  appId: "1:915524682419:web:f2a07895dfd59a735c66c6"
+};
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getDatabase(firebaseApp);
+const pagosRef = ref(db, 'pagos');
+
+// ── PINs ──────────────────────────────────────────
+const PINES = { '1234': 'ivan', '9999': 'barbi' }; // cambiá estos PINs antes de compartir
+
+// ── Estado ────────────────────────────────────────
+let pagos = {};
+let modo = 'ivan';
+let userRole = null;
+
+// ── PIN ───────────────────────────────────────────
+window.checkPin = function() {
+  const val = document.getElementById('pin-input').value.trim();
+  const role = PINES[val];
+  if (role) {
+    userRole = role;
+    document.getElementById('pin-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('sync-user').textContent = role === 'ivan' ? 'Iván' : 'Bárbara';
+    if (role === 'barbi') {
+      document.getElementById('btn-barbi').style.display = '';
+      setMode('barbi');
+    } else {
+      setMode('ivan');
+    }
+    iniciarFirebase();
+  } else {
+    document.getElementById('pin-error').textContent = 'PIN incorrecto, intentá de nuevo.';
+    document.getElementById('pin-input').value = '';
+  }
+};
+
+document.getElementById('pin-input').addEventListener('keyup', e => { if(e.key === 'Enter') window.checkPin(); });
+
+// ── Firebase: escuchar cambios en tiempo real ─────
+function iniciarFirebase() {
+  setSyncing(true);
+  onValue(pagosRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      pagos = data;
+    } else {
+      // Primera vez: cargar datos iniciales
+      cargarDatosIniciales();
+    }
+    setSyncing(false);
+    render();
+  }, (error) => {
+    setSyncing(false, true);
+    toast('Error de conexión');
+  });
+}
+
+function cargarDatosIniciales() {
+  const inicial = [
+    {nombre:'Alquiler casa',monto:929000,cat:'Vivienda y alquileres',nota:'',estado:'Pendiente'},
+    {nombre:'Alquiler Ofi',monto:358000,cat:'Vivienda y alquileres',nota:'',estado:'Pendiente'},
+    {nombre:'Alquiler de Viqui',monto:498000,cat:'Vivienda y alquileres',nota:'',estado:'Pendiente'},
+    {nombre:'Cuota Lote',monto:1653000,cat:'Vivienda y alquileres',nota:'Feb + Mar + Abr',estado:'Pendiente'},
+    {nombre:'Cuota 208',monto:460000,cat:'Vivienda y alquileres',nota:'Abril',estado:'Pendiente'},
+    {nombre:'Cámaras de Seguridad',monto:76000,cat:'Vivienda y alquileres',nota:'',estado:'Pendiente'},
+    {nombre:'Luz',monto:null,cat:'Vivienda y alquileres',nota:'',estado:'Pendiente'},
+    {nombre:'Gas',monto:null,cat:'Vivienda y alquileres',nota:'',estado:'Pendiente'},
+    {nombre:'Visa BBVA',monto:null,cat:'Tarjetas',nota:'',estado:'Pendiente'},
+    {nombre:'Master BBVA',monto:null,cat:'Tarjetas',nota:'',estado:'Pendiente'},
+    {nombre:'Naranja',monto:null,cat:'Tarjetas',nota:'',estado:'Pendiente'},
+    {nombre:'Carlos Morales',monto:174000,cat:'Acuerdos',nota:'',estado:'Pendiente'},
+    {nombre:'Agustín Moreno',monto:128700,cat:'Acuerdos',nota:'',estado:'Pendiente'},
+    {nombre:'Celina Capello',monto:86000,cat:'Acuerdos',nota:'',estado:'Pendiente'},
+    {nombre:'Ruben Prada',monto:128700,cat:'Acuerdos',nota:'',estado:'Pendiente'},
+    {nombre:'Medicus Iván',monto:326600,cat:'Salud',nota:'Mar + Abr',estado:'Pendiente'},
+    {nombre:'Medicus Elina',monto:369800,cat:'Salud',nota:'Mar + Abr',estado:'Pendiente'},
+    {nombre:'Medicus Belén',monto:301576,cat:'Salud',nota:'Mar + Abr',estado:'Pendiente'},
+    {nombre:'Premedic Victoria',monto:260000,cat:'Salud',nota:'Abril',estado:'Pendiente'},
+    {nombre:'Afippi',monto:265200,cat:'Otros',nota:'',estado:'Pendiente'},
+    {nombre:'Educación (Matrícula)',monto:197574,cat:'Otros',nota:'',estado:'Pendiente'},
+    {nombre:'Seguro Gol',monto:57554,cat:'Otros',nota:'',estado:'Pendiente'},
+    {nombre:'Flow Hortiguera',monto:126571,cat:'Otros',nota:'',estado:'Pendiente'},
+    {nombre:'Flow Ofi',monto:35631,cat:'Otros',nota:'Dar de baja',estado:'Pendiente'},
+  ];
+  const obj = {};
+  inicial.forEach((p, i) => { obj['p' + (Date.now() + i)] = p; });
+  set(pagosRef, obj);
+}
+
+// ── Helpers ───────────────────────────────────────
+function fmt(n) {
+  if (n === null || n === undefined || n === '') return '❓';
+  return '$' + Math.round(Number(n)).toLocaleString('es-AR');
+}
+function hoy() { return new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
+function esOk(p) { return p.estado === 'Pagado'; }
+function uid() { return 'p' + Date.now() + Math.floor(Math.random()*1000); }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show';
+  setTimeout(() => t.className = 'toast', 2200);
+}
+
+function setSyncing(v, error=false) {
+  const dot = document.getElementById('sync-dot');
+  const txt = document.getElementById('sync-txt');
+  if (!dot || !txt) return;
+  dot.className = 'sync-dot' + (error ? ' err' : v ? ' syncing' : '');
+  txt.textContent = error ? 'Sin conexión' : v ? 'Guardando...' : '● En vivo';
+}
+
+// ── Render ────────────────────────────────────────
+function render() {
+  document.getElementById('fecha-hoy').textContent = hoy();
+  const lista = Object.entries(pagos).map(([id, p]) => ({ id, ...p }));
+  renderSummary(lista);
+  if (modo === 'ivan') renderIvan(lista);
+  else renderBarbi(lista);
+}
+
+function renderSummary(lista) {
+  const total   = lista.reduce((s,p) => s + (Number(p.monto)||0), 0);
+  const abonado = lista.filter(esOk).reduce((s,p) => s + (Number(p.monto)||0), 0);
+  const nOk     = lista.filter(esOk).length;
+  document.getElementById('summary').innerHTML = `
+    <div class="sum-card"><div class="sum-num">${nOk}/${lista.length}</div><div class="sum-label">Abonados</div></div>
+    <div class="sum-card"><div class="sum-num green">${fmt(abonado)}</div><div class="sum-label">Abonado</div></div>
+    <div class="sum-card"><div class="sum-num amber">${fmt(total - abonado)}</div><div class="sum-label">Pendiente</div></div>`;
+}
+
+function renderIvan(lista) {
+  const main = document.getElementById('main');
+  if (!lista.length) {
+    main.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>No hay pagos cargados esta semana.</p></div>';
+    return;
+  }
+  const cats = [...new Set(lista.map(p => p.cat))];
+  let html = '';
+  cats.forEach(cat => {
+    const items = lista.filter(p => p.cat === cat);
+    html += `<div class="cat-block"><div class="cat-title">${cat}</div>`;
+    items.forEach(p => {
+      const ok = esOk(p);
+      html += `<div class="pago ${ok ? 'pagado' : ''}">
+        <div class="pago-info">
+          <div class="pago-nombre">${p.nombre}</div>
+          <div class="pago-sub">
+            <span class="pago-monto">${fmt(p.monto)}</span>
+            ${p.nota ? `<span class="pago-nota">${p.nota}</span>` : ''}
+          </div>
+        </div>
+        <button class="check" onclick="window.togglePago('${p.id}')">
+          ${ok ? `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,7 5.5,11 12,3"/></svg>` : ''}
+        </button>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  main.innerHTML = html;
+}
+
+function renderBarbi(lista) {
+  const main = document.getElementById('main');
+  let html = `
+    <div class="form-section">
+      <div class="form-title">Agregar pago</div>
+      <div class="field"><label>Concepto</label><input type="text" id="f-nombre" placeholder="Ej: Alquiler Ofi"/></div>
+      <div class="field-row">
+        <div class="field"><label>Monto ($)</label><input type="number" id="f-monto" placeholder="358000"/></div>
+        <div class="field"><label>Categoría</label>
+          <select id="f-cat">
+            <option>Vivienda y alquileres</option>
+            <option>Tarjetas</option>
+            <option>Acuerdos</option>
+            <option>Salud</option>
+            <option>Otros</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Nota (opcional)</label><input type="text" id="f-nota" placeholder="Ej: Mar + Abr"/></div>
+      <button class="btn-add" id="btn-agregar" onclick="window.agregarPago()">Agregar pago</button>
+    </div>
+    <button class="btn-reset" onclick="window.resetSemana()">🗑 Limpiar lista para nueva semana</button>`;
+
+  if (lista.length) {
+    const cats = [...new Set(lista.map(p => p.cat))];
+    cats.forEach(cat => {
+      const items = lista.filter(p => p.cat === cat);
+      html += `<div class="cat-block"><div class="cat-title">${cat}</div>`;
+      items.forEach(p => {
+        html += `<div class="pago ${esOk(p) ? 'pagado' : ''}">
+          <div class="pago-info">
+            <div class="pago-nombre">${p.nombre}</div>
+            <div class="pago-sub">
+              <span class="pago-monto">${fmt(p.monto)}</span>
+              ${p.nota ? `<span class="pago-nota">${p.nota}</span>` : ''}
+            </div>
+          </div>
+          <button class="del-btn" onclick="window.eliminarPago('${p.id}')">×</button>
+        </div>`;
+      });
+      html += '</div>';
+    });
+  }
+  main.innerHTML = html;
+}
+
+// ── Acciones Firebase ─────────────────────────────
+window.togglePago = function(id) {
+  const p = pagos[id];
+  if (!p) return;
+  const nuevoEstado = esOk(p) ? 'Pendiente' : 'Pagado';
+  update(ref(db, 'pagos/' + id), { estado: nuevoEstado });
+  toast(nuevoEstado === 'Pagado' ? '✓ Marcado como abonado' : 'Marcado como pendiente');
+};
+
+window.agregarPago = function() {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const monto  = document.getElementById('f-monto').value ? Number(document.getElementById('f-monto').value) : null;
+  const cat    = document.getElementById('f-cat').value;
+  const nota   = document.getElementById('f-nota').value.trim();
+  if (!nombre) { document.getElementById('f-nombre').focus(); return; }
+  const id = uid();
+  set(ref(db, 'pagos/' + id), { nombre, monto, cat, nota, estado: 'Pendiente' });
+  document.getElementById('f-nombre').value = '';
+  document.getElementById('f-monto').value  = '';
+  document.getElementById('f-nota').value   = '';
+  toast('✓ Pago agregado');
+};
+
+window.eliminarPago = function(id) {
+  remove(ref(db, 'pagos/' + id));
+};
+
+window.resetSemana = function() {
+  if (!confirm('¿Limpiar todos los pagos para cargar los de la nueva semana?')) return;
+  set(pagosRef, null);
+  toast('Lista limpia para nueva semana');
+};
+
+// ── Modo ──────────────────────────────────────────
+window.setMode = setMode;
+function setMode(m) {
+  modo = m;
+  document.getElementById('btn-ivan').className  = 'mode-btn' + (m === 'ivan'  ? ' active' : '');
+  document.getElementById('btn-barbi').className = 'mode-btn' + (m === 'barbi' ? ' active' : '');
+  render();
+}
+
+</script>
+</body>
+</html>
